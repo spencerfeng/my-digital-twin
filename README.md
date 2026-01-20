@@ -5,6 +5,6 @@ My digital twin is a conversational AI designed to engage with visitors and answ
 ## Tech stack
 
 - React
-- Nodejs
+- NestJS
 - Langchain
 - TypeScript
