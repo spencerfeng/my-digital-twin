@@ -3,9 +3,10 @@ import { HealthController } from "./health/health.controller"
 import { ChatController } from "./chat/chat.controller"
 import { ResourceModule } from "./resource/resource.module"
 import { PromptModule } from "./prompt/prompt.module"
+import { MemoryModule } from "./memory/memory.module"
 
 @Module({
-  imports: [ResourceModule, PromptModule],
+  imports: [ResourceModule, PromptModule, MemoryModule],
   controllers: [HealthController, ChatController],
   providers: []
 })
