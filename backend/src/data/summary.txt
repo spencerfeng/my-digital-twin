@@ -1,0 +1,7 @@
+I am a dedicated and dependable software engineer with a strong commitment to collaboration and continuous learning. I take pride in being a proactive team member and enjoy sharing knowledge through technical writing.
+
+I hold the following certifications:
+• AWS Certified AI Practitioner
+• AWS Certified Solutions Architect – Associate
+
+I have a strong interest in developing AI agents. While I do not yet have professional experience in this area, I am actively building my skills by taking courses on agentic system development using tools such as crewAI and LangGraph. I am highly motivated to deepen my expertise and apply these capabilities to real-world solutions.
