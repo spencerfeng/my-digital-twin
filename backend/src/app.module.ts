@@ -1,13 +1,19 @@
 import { Module } from "@nestjs/common"
+import { ConfigModule } from "@nestjs/config"
 import { HealthController } from "./health/health.controller"
-import { ChatController } from "./chat/chat.controller"
 import { ResourceModule } from "./resource/resource.module"
-import { PromptModule } from "./prompt/prompt.module"
-import { MemoryModule } from "./memory/memory.module"
+import { ChatModule } from "./chat/chat.module"
 
 @Module({
-  imports: [ResourceModule, PromptModule, MemoryModule],
-  controllers: [HealthController, ChatController],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ".env"
+    }),
+    ResourceModule,
+    ChatModule
+  ],
+  controllers: [HealthController],
   providers: []
 })
 export class AppModule { }

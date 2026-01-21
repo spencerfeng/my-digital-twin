@@ -36,3 +36,8 @@ lerna-debug.log*
 
 # Memory/conversation storage
 /memory
+
+# Environment variables
+.env
+.env.local
+.env.*.local
