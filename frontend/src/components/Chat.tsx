@@ -32,25 +32,49 @@ export default function Chat() {
       content: message,
       timestamp: new Date().toISOString()
     }
-    setMessages((prev) => [...prev, userMessage])
+    
+    // Create placeholder for streaming response
+    const assistantMessage: ChatMessageType = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString()
+    }
+    
+    // Add both messages at once
+    setMessages((prev) => [...prev, userMessage, assistantMessage])
     setInput("")
     setIsLoading(true)
 
     try {
-      const response = await chatService.sendMessage(message)
-      const assistantMessage: ChatMessageType = {
-        role: "assistant",
-        content: response.response,
-        timestamp: new Date().toISOString()
-      }
-      setMessages((prev) => [...prev, assistantMessage])
+      await chatService.sendMessage(message, (chunk: string) => {
+        // Update the last message (assistant message) with streaming content
+        setMessages((prev) => {
+          const updated = [...prev]
+          const lastIndex = updated.length - 1
+          const lastMsg = updated[lastIndex]
+          if (lastMsg && lastMsg.role === "assistant") {
+            updated[lastIndex] = {
+              ...lastMsg,
+              content: lastMsg.content + chunk
+            }
+          }
+          return updated
+        })
+      })
     } catch (error) {
-      const errorMessage: ChatMessageType = {
-        role: "assistant",
-        content: `Error: ${error instanceof Error ? error.message : "Failed to send message"}`,
-        timestamp: new Date().toISOString()
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      // Update the last message with error
+      setMessages((prev) => {
+        const updated = [...prev]
+        const lastIndex = updated.length - 1
+        const lastMsg = updated[lastIndex]
+        if (lastMsg && lastMsg.role === "assistant") {
+          updated[lastIndex] = {
+            ...lastMsg,
+            content: `Error: ${error instanceof Error ? error.message : "Failed to send message"}`
+          }
+        }
+        return updated
+      })
       console.error("Chat error:", error)
     } finally {
       setIsLoading(false)

@@ -1,10 +1,11 @@
-import { Controller, Post, Body, HttpException, HttpStatus } from "@nestjs/common"
+import { Controller, Post, Body, Res } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { v4 as uuidv4 } from "uuid"
 import { ChatOpenAI } from "@langchain/openai"
 import { HumanMessage, SystemMessage, AIMessage, BaseMessage } from "@langchain/core/messages"
 import { MemoryService } from "../memory/memory.service"
 import { PromptService } from "../prompt/prompt.service"
+import { Response } from "express"
 
 export interface ChatRequest {
   message: string
@@ -39,7 +40,7 @@ export class ChatController {
   }
 
   @Post("chat")
-  async chat(@Body() body: ChatRequest): Promise<ChatResponse> {
+  async chat(@Body() body: ChatRequest, @Res() res: Response): Promise<void> {
     try {
       // Generate session ID if not provided
       const sessionId = body.sessionId || uuidv4()
@@ -63,9 +64,28 @@ export class ChatController {
       // Add current user message
       messages.push(new HumanMessage(body.message))
 
-      // Call Langchain API
-      const response = await this.chatModel.invoke(messages)
-      const assistantResponse = response.content as string
+      // Set up streaming response
+      res.setHeader("Content-Type", "text/event-stream")
+      res.setHeader("Cache-Control", "no-cache")
+      res.setHeader("Connection", "keep-alive")
+
+      // Send session ID first
+      res.write(`data: ${JSON.stringify({ type: "sessionId", sessionId })}\n\n`)
+
+      let fullResponse = ""
+
+      // Stream the response from Langchain
+      const stream = await this.chatModel.stream(messages)
+      for await (const chunk of stream) {
+        const content = chunk.content as string
+        if (content) {
+          fullResponse += content
+          res.write(`data: ${JSON.stringify({ type: "chunk", content })}\n\n`)
+        }
+      }
+
+      // Send completion signal
+      res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`)
 
       // Update conversation history
       const timestamp = new Date().toISOString()
@@ -76,23 +96,23 @@ export class ChatController {
       })
       conversation.push({
         role: "assistant",
-        content: assistantResponse,
+        content: fullResponse,
         timestamp
       })
 
       // Save conversation
       await this.memoryService.saveConversation(sessionId, conversation)
 
-      return {
-        response: assistantResponse,
-        sessionId
-      }
+      res.end()
     } catch (error) {
       console.error(`Error in chat endpoint: ${error}`)
-      throw new HttpException(
-        `Error processing chat request: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+      res.write(
+        `data: ${JSON.stringify({
+          type: "error",
+          error: error instanceof Error ? error.message : "Failed to process chat request"
+        })}\n\n`
       )
+      res.end()
     }
   }
 }
