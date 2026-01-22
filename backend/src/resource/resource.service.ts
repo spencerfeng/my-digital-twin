@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from "@nestjs/common"
 import * as fs from "fs/promises"
 import * as path from "path"
-import pdfParse from "pdf-parse"
+import { PDFParse } from "pdf-parse"
 
 export interface Facts {
   full_name?: string
@@ -48,8 +48,11 @@ export class ResourceService implements OnModuleInit {
     try {
       const pdfPath = path.join(this.dataPath, "linkedin.pdf")
       const pdfBuffer = await fs.readFile(pdfPath)
-      const pdfData = await pdfParse(pdfBuffer)
-      this.linkedin = pdfData.text || ""
+      // Convert Buffer to Uint8Array as required by pdf-parse
+      const pdfUint8Array = new Uint8Array(pdfBuffer)
+      const parser = new PDFParse(pdfUint8Array)
+      const pdfData = await parser.getText()
+      this.linkedin = (typeof pdfData === "string" ? pdfData : pdfData.text) || ""
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         this.linkedin = "LinkedIn profile not available"
