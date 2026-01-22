@@ -1,0 +1,10 @@
+GET http://localhost:3000/health
+
+###
+
+POST http://localhost:3000/chat
+Content-Type: application/json
+
+{
+  "message": "Hello, how are you?"
+}
